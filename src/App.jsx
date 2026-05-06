@@ -27,7 +27,13 @@ function useSchoolsData() {
         return res.json();
       })
       .then(json => {
-        console.log('✅ [SUCCESS] 學校數據載入成功，總數:', json?.length || 0);
+        console.log('✅ [SUCCESS] 學校數據載入成功，總數:', json?.schools?.length || 0);
+        console.log('🔍 [DEBUG] JSON結構檢查:', {
+          hasMetadata: !!json.metadata,
+          hasSchools: !!json.schools,
+          schoolsType: typeof json.schools,
+          schoolsIsArray: Array.isArray(json.schools)
+        });
         setData(json);
         setLoading(false);
       })
