@@ -88,7 +88,49 @@ function AppContent() {
     console.log('🔍 [DEBUG] 組件已掛載');
     console.log('🔍 [DEBUG] 當前語言:', lang);
     console.log('🔍 [DEBUG] 數據狀態:', { loading, error, dataLength: data?.length });
-  }, [lang]);
+  }, [lang, loading, error, data?.length]);
+
+  // 在條件返回之前定義 useMemo - 遵守 React Hook 規則
+  const filteredSchools = useMemo(() => {
+    if (!data) return [];
+    
+    let schools = showFavoritesOnly ? data.filter(school => favorites.includes(school.name)) : data;
+    
+    if (filters.region) {
+      schools = schools.filter(school => school.region === filters.region);
+    }
+    if (filters.country) {
+      schools = schools.filter(school => school.country === filters.country);
+    }
+    if (filters.exchangeType) {
+      schools = schools.filter(school => school.exchangeType === filters.exchangeType);
+    }
+    if (filters.semester) {
+      schools = schools.filter(school => school.semester === filters.semester);
+    }
+    if (filters.gpa) {
+      schools = schools.filter(school => {
+        const schoolGpa = parseFloat(school.gpa);
+        const filterGpa = parseFloat(filters.gpa);
+        return schoolGpa <= filterGpa;
+      });
+    }
+    if (filters.language) {
+      schools = schools.filter(school => 
+        school.language && school.language.includes(filters.language)
+      );
+    }
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      schools = schools.filter(school =>
+        school.name.toLowerCase().includes(searchLower) ||
+        school.country.toLowerCase().includes(searchLower) ||
+        (school.region && school.region.toLowerCase().includes(searchLower))
+      );
+    }
+    
+    return schools;
+  }, [data, filters, showFavoritesOnly, favorites]);
 
   // 錯誤處理和調試信息
   if (error) {
@@ -131,48 +173,7 @@ function AppContent() {
     );
   }
 
-  // 原有的應用程式邏輯繼續...
-
-  const filteredSchools = useMemo(() => {
-    if (!data) return [];
-    
-    let schools = showFavoritesOnly ? data.filter(school => favorites.includes(school.name)) : data;
-    
-    if (filters.region) {
-      schools = schools.filter(school => school.region === filters.region);
-    }
-    if (filters.country) {
-      schools = schools.filter(school => school.country === filters.country);
-    }
-    if (filters.exchangeType) {
-      schools = schools.filter(school => school.exchangeType === filters.exchangeType);
-    }
-    if (filters.semester) {
-      schools = schools.filter(school => school.semester === filters.semester);
-    }
-    if (filters.gpa) {
-      schools = schools.filter(school => {
-        const schoolGpa = parseFloat(school.gpa);
-        const filterGpa = parseFloat(filters.gpa);
-        return schoolGpa <= filterGpa;
-      });
-    }
-    if (filters.language) {
-      schools = schools.filter(school => 
-        school.language && school.language.includes(filters.language)
-      );
-    }
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      schools = schools.filter(school =>
-        school.name.toLowerCase().includes(searchLower) ||
-        school.country.toLowerCase().includes(searchLower) ||
-        (school.region && school.region.toLowerCase().includes(searchLower))
-      );
-    }
-    
-    return schools;
-  }, [data, filters, showFavoritesOnly, favorites]);
+  // 原有的應用程式邏輯繼續...（filteredSchools useMemo 已移至頂部）
 
   const uniqueRegions = [...new Set(data?.map(school => school.region) || [])];
   const uniqueCountries = [...new Set(data?.map(school => school.country) || [])];
