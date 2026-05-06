@@ -9,56 +9,32 @@ function useSchoolsData() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    console.log('🔍 [DEBUG] 開始載入學校數據...');
-    
-    // 從 GitHub Pages 載入（更穩定）
-    const rawGitHubUrl = 'https://nhy497.github.io/Exchange2/data/schools_complete.json';
-    console.log('🔍 [DEBUG] 完整URL:', rawGitHubUrl);
-    
-    fetch(rawGitHubUrl)
+    const base = import.meta.env.BASE_URL || '/';
+    const url = `${base}data/schools_complete.json`;
+    console.log('🔍 [DEBUG] 開始載入學校數據，URL:', url);
+
+    fetch(url)
       .then(res => {
-        console.log('🔍 [DEBUG] Fetch response:', res);
-        console.log('🔍 [DEBUG] Response status:', res.status);
-        console.log('🔍 [DEBUG] Response ok:', res.ok);
-        
-        if (!res.ok) {
-          const errorText = `HTTP ${res.status}: ${res.statusText}`;
-          console.error('❌ [ERROR] Failed to load schools data:', errorText);
-          throw new Error(errorText);
-        }
+        console.log('🔍 [DEBUG] Response status:', res.status, res.ok);
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         return res.json();
       })
       .then(json => {
-        console.log('✅ [SUCCESS] 學校數據載入成功，總數:', json?.schools?.length || 0);
-        // 安全提取數組
         let schoolsArray = [];
-        if (json && typeof json === 'object') {
-          if (Array.isArray(json.schools)) {
-            schoolsArray = json.schools;
-          } else if (Array.isArray(json)) {
-            schoolsArray = json;
-          }
+        if (Array.isArray(json)) {
+          schoolsArray = json;
+        } else if (json && Array.isArray(json.schools)) {
+          schoolsArray = json.schools;
         }
-        console.log('🔍 [DEBUG] 實際使用的數據:', schoolsArray);
+        console.log('✅ [SUCCESS] 學校數據載入成功，總數:', schoolsArray.length);
         setData(schoolsArray);
         setLoading(false);
       })
       .catch(err => {
-        console.error('❌ [ERROR] 載入學校數據時發生錯誤:', err);
-        console.error('❌ [ERROR] 錯誤堆疊:', err.stack);
+        console.error('❌ [ERROR] 載入學校數據失敗:', err);
         setError(err.message);
         setLoading(false);
-        
-        const errorInfo = {
-          timestamp: new Date().toISOString(),
-          error: err.message,
-          stack: err.stack,
-          requestUrl: rawGitHubUrl,
-          userAgent: navigator.userAgent
-        };
-        
-        console.log('📋 [DEBUG] 完整錯誤信息:', errorInfo);
-        window.lastError = errorInfo;
+        window.lastError = { timestamp: new Date().toISOString(), error: err.message, url };
       });
   }, []);
 
@@ -100,29 +76,21 @@ function AppContent() {
     search: ''
   });
 
-  // 顯示網站版本號到控制台
   useEffect(() => {
     console.log('%c Exchange Finder %c v1.0.0 ', 'background: #0056b3; color: white; padding: 4px 8px; border-radius: 4px 0 0 4px;', 'background: #00a651; color: white; padding: 4px 8px; border-radius: 0 4px 4px 0;');
-    console.log('🔍 [DEBUG] 組件已掛載');
-    console.log('🔍 [DEBUG] 當前語言:', lang);
-    console.log('🔍 [DEBUG] 數據狀態:', { loading, error, dataLength: data?.length });
+    console.log('🔍 [DEBUG] 組件已掛載，語言:', lang);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
 
-  // 在條件返回之前定義 useMemo - 遵守 React Hook 規則
   const filteredSchools = useMemo(() => {
-    // 安全檢查：確保所有輸入都有效
     if (!Array.isArray(data)) return [];
     if (!Array.isArray(favorites)) return [];
     
-    // 過濾有效學校
     let schools = data.filter(s => s && typeof s === 'object' && s.name);
     
-    // 收藏模式
     if (showFavoritesOnly) {
       schools = schools.filter(s => favorites.includes(s.name));
     }
-    
     if (filters.region) {
       schools = schools.filter(school => school && school.region === filters.region);
     }
@@ -162,9 +130,7 @@ function AppContent() {
     return schools;
   }, [data, filters.region, filters.country, filters.exchangeType, filters.semester, filters.gpa, filters.language, filters.search, showFavoritesOnly, favorites]);
 
-  // 錯誤處理和調試信息
   if (error) {
-    console.error('❌ [ERROR] 應用程式錯誤:', error);
     return (
       <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
@@ -202,8 +168,6 @@ function AppContent() {
       </div>
     );
   }
-
-  // 原有的應用程式邏輯繼續...（filteredSchools useMemo 已移至頂部）
 
   const uniqueRegions = Array.isArray(data) 
     ? [...new Set(data.filter(s => s && s.region).map(school => school.region))] 
