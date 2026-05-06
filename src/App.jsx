@@ -11,8 +11,8 @@ function useSchoolsData() {
   useEffect(() => {
     console.log('🔍 [DEBUG] 開始載入學校數據...');
     
-    // 從 GitHub Raw CDN 載入（更可靠）
-    const rawGitHubUrl = 'https://raw.githubusercontent.com/nhy497/Exchange2/main/docs/data/schools_complete.json';
+    // 從 GitHub Pages 載入（更穩定）
+    const rawGitHubUrl = 'https://nhy497.github.io/Exchange2/data/schools_complete.json';
     console.log('🔍 [DEBUG] 完整URL:', rawGitHubUrl);
     
     fetch(rawGitHubUrl)
