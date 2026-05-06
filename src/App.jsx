@@ -64,14 +64,7 @@ function AppContent() {
   const { lang, setLang, t } = useLanguage();
   const { data, loading, error } = useSchoolsData();
 
-  // 顯示網站版本號到控制台
-  useEffect(() => {
-    console.log('%c Exchange Finder %c v1.0.0 ', 'background: #0056b3; color: white; padding: 4px 8px; border-radius: 4px 0 0 4px;', 'background: #00a651; color: white; padding: 4px 8px; border-radius: 0 4px 4px 0;');
-    console.log('🔍 [DEBUG] 組件已掛載');
-    console.log('🔍 [DEBUG] 當前語言:', lang);
-    console.log('🔍 [DEBUG] 數據狀態:', { loading, error, dataLength: data?.length });
-  }, [lang, loading, error, data?.length]);
-  
+  // 所有hooks必須在條件返回之前聲明
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('exchangeFavorites');
     return saved ? JSON.parse(saved) : [];
@@ -84,6 +77,14 @@ function AppContent() {
   const [expandedSchool, setExpandedSchool] = useState(null);
   const [showCriteriaGuide, setShowCriteriaGuide] = useState(false);
   const [selectedSchool, setSelectedSchool] = useState(null);
+
+  // 顯示網站版本號到控制台
+  useEffect(() => {
+    console.log('%c Exchange Finder %c v1.0.0 ', 'background: #0056b3; color: white; padding: 4px 8px; border-radius: 4px 0 0 4px;', 'background: #00a651; color: white; padding: 4px 8px; border-radius: 0 4px 4px 0;');
+    console.log('🔍 [DEBUG] 組件已掛載');
+    console.log('🔍 [DEBUG] 當前語言:', lang);
+    console.log('🔍 [DEBUG] 數據狀態:', { loading, error, dataLength: data?.length });
+  }, [lang, loading, error, data?.length]);
 
   // 錯誤處理和調試信息
   if (error) {
