@@ -10,10 +10,12 @@ function useSchoolsData() {
 
   useEffect(() => {
     console.log('🔍 [DEBUG] 開始載入學校數據...');
-    console.log('🔍 [DEBUG] BASE_URL:', import.meta.env.BASE_URL);
-    console.log('🔍 [DEBUG] 完整URL:', `${import.meta.env.BASE_URL}data/schools_complete.json`);
     
-    fetch(`${import.meta.env.BASE_URL}data/schools_complete.json`)
+    // 從 GitHub Raw CDN 載入（更可靠）
+    const rawGitHubUrl = 'https://raw.githubusercontent.com/nhy497/Exchange2/main/docs/data/schools_complete.json';
+    console.log('🔍 [DEBUG] 完整URL:', rawGitHubUrl);
+    
+    fetch(rawGitHubUrl)
       .then(res => {
         console.log('🔍 [DEBUG] Fetch response:', res);
         console.log('🔍 [DEBUG] Response status:', res.status);
@@ -28,13 +30,6 @@ function useSchoolsData() {
       })
       .then(json => {
         console.log('✅ [SUCCESS] 學校數據載入成功，總數:', json?.schools?.length || 0);
-        console.log('🔍 [DEBUG] JSON結構檢查:', {
-          hasMetadata: !!json.metadata,
-          hasSchools: !!json.schools,
-          schoolsType: typeof json.schools,
-          schoolsIsArray: Array.isArray(json.schools)
-        });
-        // 如果數據結構是 {schools: [...]}，提取 schools 陣列
         const schoolsArray = json.schools || json;
         console.log('🔍 [DEBUG] 實際使用的數據:', schoolsArray);
         setData(schoolsArray);
@@ -46,22 +41,15 @@ function useSchoolsData() {
         setError(err.message);
         setLoading(false);
         
-        // 添加複製錯誤信息到剪貼板的功能
         const errorInfo = {
           timestamp: new Date().toISOString(),
           error: err.message,
           stack: err.stack,
-          baseUrl: import.meta.env.BASE_URL,
-          requestUrl: `${import.meta.env.BASE_URL}data/schools_complete.json`,
+          requestUrl: rawGitHubUrl,
           userAgent: navigator.userAgent
         };
         
         console.log('📋 [DEBUG] 完整錯誤信息:', errorInfo);
-        console.log('📋 [COPY] 以下錯誤信息已準備好複製:');
-        console.log(JSON.stringify(errorInfo, null, 2));
-        console.log('💡 [COPY] 在主控台中執行: copy(JSON.stringify(window.lastError, null, 2))');
-        
-        // 將錯誤信息保存到全局變量
         window.lastError = errorInfo;
       });
   }, []);
@@ -84,8 +72,6 @@ function AppContent() {
   });
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [expandedSchool, setExpandedSchool] = useState(null);
-  const [showCriteriaGuide, setShowCriteriaGuide] = useState(false);
-  const [selectedSchool, setSelectedSchool] = useState(null);
 
   // 顯示網站版本號到控制台
   useEffect(() => {
@@ -367,7 +353,7 @@ function AppContent() {
               </p>
               {compareList.length > 0 && (
                 <button
-                  onClick={() => setSelectedSchool(null)}
+                  onClick={() => console.log('Compare functionality')}
                   className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
                 >
                   {t('compare')} ({compareList.length})
@@ -428,7 +414,7 @@ function AppContent() {
                     </div>
                     <div>
                       <span className="font-medium">{t('cgpaRequirement')}:</span>
-                      <p className="text-gray-600">{school.gpa}</p>
+                      <p className="text-gray-600">{school.cgpa}</p>
                     </div>
                     <div>
                       <span className="font-medium">{t('languageRequirement')}:</span>
