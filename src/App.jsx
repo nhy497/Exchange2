@@ -63,12 +63,22 @@ function AppContent() {
 
   // 所有hooks必須在條件返回之前聲明
   const [favorites, setFavorites] = useState(() => {
-    const saved = localStorage.getItem('exchangeFavorites');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('exchangeFavorites');
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
   });
   const [compareList, setCompareList] = useState(() => {
-    const saved = localStorage.getItem('exchangeCompare');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('exchangeCompare');
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
   });
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [expandedSchool, setExpandedSchool] = useState(null);
@@ -92,7 +102,8 @@ function AppContent() {
 
   // 在條件返回之前定義 useMemo - 遵守 React Hook 規則
   const filteredSchools = useMemo(() => {
-    if (!data) return [];
+    if (!data || !Array.isArray(data)) return [];
+    if (!Array.isArray(favorites)) return [];
     
     let schools = showFavoritesOnly ? data.filter(school => favorites.includes(school.name)) : data;
     
@@ -175,11 +186,13 @@ function AppContent() {
 
   // 原有的應用程式邏輯繼續...（filteredSchools useMemo 已移至頂部）
 
-  const uniqueRegions = [...new Set(data?.map(school => school.region) || [])];
-  const uniqueCountries = [...new Set(data?.map(school => school.country) || [])];
-  const uniqueExchangeTypes = [...new Set(data?.map(school => school.exchangeType) || [])];
-  const uniqueSemesters = [...new Set(data?.map(school => school.semester) || [])];
-  const uniqueLanguages = [...new Set(data?.flatMap(school => school.language || []) || [])];
+  const uniqueRegions = Array.isArray(data) ? [...new Set(data.map(school => school.region))] : [];
+  const uniqueCountries = Array.isArray(data) ? [...new Set(data.map(school => school.country))] : [];
+  const uniqueExchangeTypes = Array.isArray(data) ? [...new Set(data.map(school => school.exchangeType))] : [];
+  const uniqueSemesters = Array.isArray(data) ? [...new Set(data.map(school => school.semester))] : [];
+  const uniqueLanguages = Array.isArray(data) 
+    ? [...new Set(data.flatMap(school => Array.isArray(school.language) ? school.language : []))] 
+    : [];
 
   const toggleFavorite = (schoolName) => {
     setFavorites(prev => {
