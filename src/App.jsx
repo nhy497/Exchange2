@@ -30,11 +30,14 @@ function useSchoolsData() {
       })
       .then(json => {
         console.log('✅ [SUCCESS] 學校數據載入成功，總數:', json?.schools?.length || 0);
-        let schoolsArray = json.schools || json;
-        // 確保數據是數組
-        if (!Array.isArray(schoolsArray)) {
-          console.error('❌ [ERROR] 數據格式錯誤，期望數組但收到:', typeof schoolsArray);
-          schoolsArray = [];
+        // 安全提取數組
+        let schoolsArray = [];
+        if (json && typeof json === 'object') {
+          if (Array.isArray(json.schools)) {
+            schoolsArray = json.schools;
+          } else if (Array.isArray(json)) {
+            schoolsArray = json;
+          }
         }
         console.log('🔍 [DEBUG] 實際使用的數據:', schoolsArray);
         setData(schoolsArray);
@@ -108,12 +111,17 @@ function AppContent() {
 
   // 在條件返回之前定義 useMemo - 遵守 React Hook 規則
   const filteredSchools = useMemo(() => {
-    if (!data || !Array.isArray(data)) return [];
+    // 安全檢查：確保所有輸入都有效
+    if (!Array.isArray(data)) return [];
     if (!Array.isArray(favorites)) return [];
     
-    let schools = showFavoritesOnly 
-      ? data.filter(school => school && school.name && favorites.includes(school.name)) 
-      : data.filter(school => school && school.name);
+    // 過濾有效學校
+    let schools = data.filter(s => s && typeof s === 'object' && s.name);
+    
+    // 收藏模式
+    if (showFavoritesOnly) {
+      schools = schools.filter(s => favorites.includes(s.name));
+    }
     
     if (filters.region) {
       schools = schools.filter(school => school && school.region === filters.region);
