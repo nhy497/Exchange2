@@ -435,22 +435,17 @@ function AppContent() {
                       >
                         <Heart className={`w-5 h-5 ${Array.isArray(favorites) && school?.name && favorites.includes(school.name) ? 'fill-current' : ''}`} />
                       </button>
-                      {(() => {
-                        const isValidCompareList = Array.isArray(compareList);
-                        const isInCompareList = isValidCompareList && school?.name && compareList.includes(school.name);
-                        const isCompareFull = isValidCompareList && compareList.length >= 3;
-                        return (
-                          <button
-                            onClick={() => school?.name && addToCompare(school.name)}
-                            disabled={!school?.name || isInCompareList || isCompareFull}
-                            className={`p-2 rounded-lg ${
-                              isInCompareList ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-                            } ${isCompareFull && !isInCompareList ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          >
-                            <Scale className="w-5 h-5" />
-                          </button>
-                        );
-                      })()}
+                      <button
+                        onClick={() => school?.name && addToCompare(school.name)}
+                        disabled={!school?.name || (Array.isArray(compareList) && compareList.includes(school?.name)) || (Array.isArray(compareList) && compareList.length >= 3)}
+                        className={`p-2 rounded-lg ${
+                          Array.isArray(compareList) && school?.name && compareList.includes(school.name)
+                            ? 'bg-blue-100 text-blue-600'
+                            : 'bg-gray-100 text-gray-600'
+                        } ${Array.isArray(compareList) && compareList.length >= 3 && !(Array.isArray(compareList) && school?.name && compareList.includes(school.name)) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <Scale className="w-5 h-5" />
+                      </button>
                       <button
                         onClick={() => school?.name && setExpandedSchool(expandedSchool === school.name ? null : school.name)}
                         disabled={!school?.name}
