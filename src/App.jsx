@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Heart, MapPin, Calendar, Award, GraduationCap, Globe, Filter, X, Star, BookOpen, DollarSign, ExternalLink, TrendingUp, Info, Languages, Building2, Lightbulb, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Scale, Loader2 } from 'lucide-react';
-import { LanguageProvider, useLanguage, regionFeatures } from './LanguageContext';
+import { LanguageProvider, useLanguage } from './LanguageContext';
 
 // 載入學校數據
 function useSchoolsData() {
@@ -30,7 +30,12 @@ function useSchoolsData() {
       })
       .then(json => {
         console.log('✅ [SUCCESS] 學校數據載入成功，總數:', json?.schools?.length || 0);
-        const schoolsArray = json.schools || json;
+        let schoolsArray = json.schools || json;
+        // 確保數據是數組
+        if (!Array.isArray(schoolsArray)) {
+          console.error('❌ [ERROR] 數據格式錯誤，期望數組但收到:', typeof schoolsArray);
+          schoolsArray = [];
+        }
         console.log('🔍 [DEBUG] 實際使用的數據:', schoolsArray);
         setData(schoolsArray);
         setLoading(false);
@@ -220,13 +225,12 @@ function AppContent() {
   };
 
   const addToCompare = (schoolName) => {
-    const currentList = Array.isArray(compareList) ? compareList : [];
-    if (currentList.length >= 3) {
-      alert('最多只能比較3所學校');
-      return;
-    }
     setCompareList(prev => {
       const current = Array.isArray(prev) ? prev : [];
+      if (current.length >= 3) {
+        alert('最多只能比較3所學校');
+        return current;
+      }
       const newCompare = [...current, schoolName];
       localStorage.setItem('exchangeCompare', JSON.stringify(newCompare));
       return newCompare;
@@ -383,7 +387,7 @@ function AppContent() {
               <p className="text-gray-600">
                 {t('results')}: {filteredSchools.length} {t('totalSchools')}
               </p>
-              {compareList.length > 0 && (
+              {Array.isArray(compareList) && compareList.length > 0 && (
                 <button
                   onClick={() => console.log('Compare functionality')}
                   className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
@@ -394,17 +398,17 @@ function AppContent() {
             </div>
 
             <div className="space-y-4">
-              {filteredSchools.map((school) => (
-                <div key={school.name} className="bg-white rounded-lg shadow-md p-6">
+              {filteredSchools.map((school, index) => (
+                <div key={school?.id || school?.name || `school-${index}`} className="bg-white rounded-lg shadow-md p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                        {school.name}
+                        {school?.name || 'Unknown School'}
                       </h3>
                       <div className="flex flex-wrap gap-2 text-sm text-gray-600">
                         <span className="flex items-center gap-1">
                           <MapPin className="w-4 h-4" />
-                          {school.country}
+                          {school?.country || 'Unknown Country'}
                         </span>
                       </div>
                     </div>
@@ -431,10 +435,11 @@ function AppContent() {
                         <Scale className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => setExpandedSchool(expandedSchool === school.name ? null : school.name)}
-                        className="p-2 bg-gray-100 text-gray-600 rounded-lg"
+                        onClick={() => school?.name && setExpandedSchool(expandedSchool === school.name ? null : school.name)}
+                        disabled={!school?.name}
+                        className="p-2 bg-gray-100 text-gray-600 rounded-lg disabled:opacity-50"
                       >
-                        {expandedSchool === school.name ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                        {school?.name && expandedSchool === school.name ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                       </button>
                     </div>
                   </div>
@@ -442,28 +447,28 @@ function AppContent() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <span className="font-medium">{t('semester')}:</span>
-                      <p className="text-gray-600">{school.semester}</p>
+                      <p className="text-gray-600">{school?.semester || 'N/A'}</p>
                     </div>
                     <div>
                       <span className="font-medium">{t('cgpaRequirement')}:</span>
-                      <p className="text-gray-600">{school.cgpa}</p>
+                      <p className="text-gray-600">{school?.cgpa !== undefined ? school.cgpa : 'N/A'}</p>
                     </div>
                     <div>
                       <span className="font-medium">{t('languageRequirement')}:</span>
-                      <p className="text-gray-600">{school.language?.join(', ') || 'N/A'}</p>
+                      <p className="text-gray-600">{Array.isArray(school?.language) ? school.language.join(', ') : (school?.language || 'N/A')}</p>
                     </div>
                   </div>
 
-                  {expandedSchool === school.name && (
+                  {school?.name && expandedSchool === school.name && (
                     <div className="mt-4 pt-4 border-t border-gray-200">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="font-medium">{t('notes')}:</span>
-                          <p className="text-gray-600">{school.notes || 'N/A'}</p>
+                          <p className="text-gray-600">{school?.notes || 'N/A'}</p>
                         </div>
                         <div>
                           <span className="font-medium">{t('quota')}:</span>
-                          <p className="text-gray-600">{school.quota || 'N/A'}</p>
+                          <p className="text-gray-600">{school?.quota || 'N/A'}</p>
                         </div>
                       </div>
                     </div>

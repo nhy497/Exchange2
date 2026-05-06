@@ -123,5 +123,14 @@ export function LanguageProvider({ children }) {
 }
 
 export function useLanguage() {
-  return useContext(LanguageContext);
+  const context = useContext(LanguageContext);
+  if (!context) {
+    console.error('useLanguage must be used within a LanguageProvider');
+    return {
+      lang: 'zh',
+      setLang: () => {},
+      t: translations['zh']
+    };
+  }
+  return context;
 }
