@@ -106,11 +106,19 @@ export const regionFeatures = {
 
 export function LanguageProvider({ children }) {
   const [lang, setLang] = useState(() => {
-    return localStorage.getItem('exchangeLang') || 'zh';
+    try {
+      return localStorage.getItem('exchangeLang') || 'zh';
+    } catch (e) {
+      return 'zh';
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem('exchangeLang', lang);
+    try {
+      localStorage.setItem('exchangeLang', lang);
+    } catch (e) {
+      console.warn('Failed to save language preference:', e);
+    }
   }, [lang]);
 
   const t = translations[lang] || translations['zh'];

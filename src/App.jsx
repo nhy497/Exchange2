@@ -92,7 +92,7 @@ function AppContent() {
     country: '',
     exchangeType: '',
     semester: '',
-    gpa: '',
+    gpa: '4.0',
     language: '',
     search: ''
   });
@@ -103,7 +103,8 @@ function AppContent() {
     console.log('🔍 [DEBUG] 組件已掛載');
     console.log('🔍 [DEBUG] 當前語言:', lang);
     console.log('🔍 [DEBUG] 數據狀態:', { loading, error, dataLength: data?.length });
-  }, [lang, loading, error, data?.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   // 在條件返回之前定義 useMemo - 遵守 React Hook 規則
   const filteredSchools = useMemo(() => {
@@ -151,7 +152,6 @@ function AppContent() {
     }
     
     return schools;
-  // 使用 JSON.stringify(filters) 來穩定依賴項引用
   }, [data, filters.region, filters.country, filters.exchangeType, filters.semester, filters.gpa, filters.language, filters.search, showFavoritesOnly, favorites]);
 
   // 錯誤處理和調試信息
@@ -219,7 +219,11 @@ function AppContent() {
       const newFavorites = currentFavorites.includes(schoolName)
         ? currentFavorites.filter(name => name !== schoolName)
         : [...currentFavorites, schoolName];
-      localStorage.setItem('exchangeFavorites', JSON.stringify(newFavorites));
+      try {
+        localStorage.setItem('exchangeFavorites', JSON.stringify(newFavorites));
+      } catch (e) {
+        console.warn('Failed to save favorites to localStorage:', e);
+      }
       return newFavorites;
     });
   };
@@ -228,11 +232,15 @@ function AppContent() {
     setCompareList(prev => {
       const current = Array.isArray(prev) ? prev : [];
       if (current.length >= 3) {
-        alert('最多只能比較3所學校');
+        console.warn('Compare list is full (max 3 schools)');
         return current;
       }
       const newCompare = [...current, schoolName];
-      localStorage.setItem('exchangeCompare', JSON.stringify(newCompare));
+      try {
+        localStorage.setItem('exchangeCompare', JSON.stringify(newCompare));
+      } catch (e) {
+        console.warn('Failed to save compare list to localStorage:', e);
+      }
       return newCompare;
     });
   };
@@ -241,7 +249,11 @@ function AppContent() {
     setCompareList(prev => {
       const current = Array.isArray(prev) ? prev : [];
       const newCompare = current.filter(name => name !== schoolName);
-      localStorage.setItem('exchangeCompare', JSON.stringify(newCompare));
+      try {
+        localStorage.setItem('exchangeCompare', JSON.stringify(newCompare));
+      } catch (e) {
+        console.warn('Failed to save compare list to localStorage:', e);
+      }
       return newCompare;
     });
   };
@@ -370,7 +382,7 @@ function AppContent() {
                     country: '',
                     exchangeType: '',
                     semester: '',
-                    gpa: '',
+                    gpa: '4.0',
                     language: '',
                     search: ''
                   })}
@@ -423,17 +435,22 @@ function AppContent() {
                       >
                         <Heart className={`w-5 h-5 ${Array.isArray(favorites) && school?.name && favorites.includes(school.name) ? 'fill-current' : ''}`} />
                       </button>
-                      <button
-                        onClick={() => school?.name && addToCompare(school.name)}
-                        disabled={!school?.name || (Array.isArray(compareList) && compareList.includes(school.name)) || (Array.isArray(compareList) && compareList.length >= 3)}
-                        className={`p-2 rounded-lg ${
-                          Array.isArray(compareList) && school?.name && compareList.includes(school.name)
-                            ? 'bg-blue-100 text-blue-600'
-                            : 'bg-gray-100 text-gray-600'
-                        } ${Array.isArray(compareList) && compareList.length >= 3 && !(Array.isArray(compareList) && school?.name && compareList.includes(school.name)) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        <Scale className="w-5 h-5" />
-                      </button>
+                      {(() => {
+                        const isValidCompareList = Array.isArray(compareList);
+                        const isInCompareList = isValidCompareList && school?.name && compareList.includes(school.name);
+                        const isCompareFull = isValidCompareList && compareList.length >= 3;
+                        return (
+                          <button
+                            onClick={() => school?.name && addToCompare(school.name)}
+                            disabled={!school?.name || isInCompareList || isCompareFull}
+                            className={`p-2 rounded-lg ${
+                              isInCompareList ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                            } ${isCompareFull && !isInCompareList ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            <Scale className="w-5 h-5" />
+                          </button>
+                        );
+                      })()}
                       <button
                         onClick={() => school?.name && setExpandedSchool(expandedSchool === school.name ? null : school.name)}
                         disabled={!school?.name}
