@@ -113,7 +113,7 @@ export function LanguageProvider({ children }) {
     localStorage.setItem('exchangeLang', lang);
   }, [lang]);
 
-  const t = translations[lang];
+  const t = translations[lang] || translations['zh'];
 
   return (
     <LanguageContext.Provider value={{ lang, setLang, t }}>

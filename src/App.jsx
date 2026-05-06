@@ -105,43 +105,49 @@ function AppContent() {
     if (!data || !Array.isArray(data)) return [];
     if (!Array.isArray(favorites)) return [];
     
-    let schools = showFavoritesOnly ? data.filter(school => favorites.includes(school.name)) : data;
+    let schools = showFavoritesOnly 
+      ? data.filter(school => school && school.name && favorites.includes(school.name)) 
+      : data.filter(school => school && school.name);
     
     if (filters.region) {
-      schools = schools.filter(school => school.region === filters.region);
+      schools = schools.filter(school => school && school.region === filters.region);
     }
     if (filters.country) {
-      schools = schools.filter(school => school.country === filters.country);
+      schools = schools.filter(school => school && school.country === filters.country);
     }
     if (filters.exchangeType) {
-      schools = schools.filter(school => school.exchangeType === filters.exchangeType);
+      schools = schools.filter(school => school && school.exchangeType === filters.exchangeType);
     }
     if (filters.semester) {
-      schools = schools.filter(school => school.semester === filters.semester);
+      schools = schools.filter(school => school && school.semester === filters.semester);
     }
     if (filters.gpa) {
       schools = schools.filter(school => {
+        if (!school || school.gpa === undefined) return false;
         const schoolGpa = parseFloat(school.gpa);
         const filterGpa = parseFloat(filters.gpa);
-        return schoolGpa <= filterGpa;
+        return !isNaN(schoolGpa) && !isNaN(filterGpa) && schoolGpa <= filterGpa;
       });
     }
     if (filters.language) {
       schools = schools.filter(school => 
-        school.language && school.language.includes(filters.language)
+        school && Array.isArray(school.language) && school.language.includes(filters.language)
       );
     }
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      schools = schools.filter(school =>
-        school.name.toLowerCase().includes(searchLower) ||
-        school.country.toLowerCase().includes(searchLower) ||
-        (school.region && school.region.toLowerCase().includes(searchLower))
-      );
+      schools = schools.filter(school => {
+        if (!school) return false;
+        const nameMatch = school.name && typeof school.name === 'string' && school.name.toLowerCase().includes(searchLower);
+        const countryMatch = school.country && typeof school.country === 'string' && school.country.toLowerCase().includes(searchLower);
+        const regionMatch = school.region && typeof school.region === 'string' && school.region.toLowerCase().includes(searchLower);
+        return nameMatch || countryMatch || regionMatch;
+      });
     }
     
     return schools;
-  }, [data, filters, showFavoritesOnly, favorites]);
+  // 使用 JSON.stringify(filters) 來穩定依賴項引用
+  }, [data, filters.region, filters.country, filters.exchangeType, filters.semester, filters.gpa, filters.language, filters.search, showFavoritesOnly, favorites]);
 
   // 錯誤處理和調試信息
   if (error) {
@@ -186,31 +192,42 @@ function AppContent() {
 
   // 原有的應用程式邏輯繼續...（filteredSchools useMemo 已移至頂部）
 
-  const uniqueRegions = Array.isArray(data) ? [...new Set(data.map(school => school.region))] : [];
-  const uniqueCountries = Array.isArray(data) ? [...new Set(data.map(school => school.country))] : [];
-  const uniqueExchangeTypes = Array.isArray(data) ? [...new Set(data.map(school => school.exchangeType))] : [];
-  const uniqueSemesters = Array.isArray(data) ? [...new Set(data.map(school => school.semester))] : [];
+  const uniqueRegions = Array.isArray(data) 
+    ? [...new Set(data.filter(s => s && s.region).map(school => school.region))] 
+    : [];
+  const uniqueCountries = Array.isArray(data) 
+    ? [...new Set(data.filter(s => s && s.country).map(school => school.country))] 
+    : [];
+  const uniqueExchangeTypes = Array.isArray(data) 
+    ? [...new Set(data.filter(s => s && s.exchangeType).map(school => school.exchangeType))] 
+    : [];
+  const uniqueSemesters = Array.isArray(data) 
+    ? [...new Set(data.filter(s => s && s.semester).map(school => school.semester))] 
+    : [];
   const uniqueLanguages = Array.isArray(data) 
-    ? [...new Set(data.flatMap(school => Array.isArray(school.language) ? school.language : []))] 
+    ? [...new Set(data.flatMap(school => Array.isArray(school?.language) ? school.language : []))] 
     : [];
 
   const toggleFavorite = (schoolName) => {
     setFavorites(prev => {
-      const newFavorites = prev.includes(schoolName)
-        ? prev.filter(name => name !== schoolName)
-        : [...prev, schoolName];
+      const currentFavorites = Array.isArray(prev) ? prev : [];
+      const newFavorites = currentFavorites.includes(schoolName)
+        ? currentFavorites.filter(name => name !== schoolName)
+        : [...currentFavorites, schoolName];
       localStorage.setItem('exchangeFavorites', JSON.stringify(newFavorites));
       return newFavorites;
     });
   };
 
   const addToCompare = (schoolName) => {
-    if (compareList.length >= 3) {
+    const currentList = Array.isArray(compareList) ? compareList : [];
+    if (currentList.length >= 3) {
       alert('最多只能比較3所學校');
       return;
     }
     setCompareList(prev => {
-      const newCompare = [...prev, schoolName];
+      const current = Array.isArray(prev) ? prev : [];
+      const newCompare = [...current, schoolName];
       localStorage.setItem('exchangeCompare', JSON.stringify(newCompare));
       return newCompare;
     });
@@ -218,7 +235,8 @@ function AppContent() {
 
   const removeFromCompare = (schoolName) => {
     setCompareList(prev => {
-      const newCompare = prev.filter(name => name !== schoolName);
+      const current = Array.isArray(prev) ? prev : [];
+      const newCompare = current.filter(name => name !== schoolName);
       localStorage.setItem('exchangeCompare', JSON.stringify(newCompare));
       return newCompare;
     });
@@ -252,7 +270,7 @@ function AppContent() {
               }`}
             >
               <Heart className={`w-4 h-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-              {showFavoritesOnly ? t('favorites') : t('favorites')}
+              {t('favorites')}
             </button>
           </div>
         </header>
@@ -392,23 +410,23 @@ function AppContent() {
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => toggleFavorite(school.name)}
+                        onClick={() => school?.name && toggleFavorite(school.name)}
                         className={`p-2 rounded-lg ${
-                          favorites.includes(school.name)
+                          Array.isArray(favorites) && school?.name && favorites.includes(school.name)
                             ? 'bg-red-100 text-red-600'
                             : 'bg-gray-100 text-gray-600'
                         }`}
                       >
-                        <Heart className={`w-5 h-5 ${favorites.includes(school.name) ? 'fill-current' : ''}`} />
+                        <Heart className={`w-5 h-5 ${Array.isArray(favorites) && school?.name && favorites.includes(school.name) ? 'fill-current' : ''}`} />
                       </button>
                       <button
-                        onClick={() => addToCompare(school.name)}
-                        disabled={compareList.includes(school.name) || compareList.length >= 3}
+                        onClick={() => school?.name && addToCompare(school.name)}
+                        disabled={!school?.name || (Array.isArray(compareList) && compareList.includes(school.name)) || (Array.isArray(compareList) && compareList.length >= 3)}
                         className={`p-2 rounded-lg ${
-                          compareList.includes(school.name)
+                          Array.isArray(compareList) && school?.name && compareList.includes(school.name)
                             ? 'bg-blue-100 text-blue-600'
                             : 'bg-gray-100 text-gray-600'
-                        } ${compareList.length >= 3 && !compareList.includes(school.name) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        } ${Array.isArray(compareList) && compareList.length >= 3 && !(Array.isArray(compareList) && school?.name && compareList.includes(school.name)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <Scale className="w-5 h-5" />
                       </button>
