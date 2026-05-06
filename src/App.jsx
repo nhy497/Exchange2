@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Heart, MapPin, Calendar, Award, GraduationCap, Globe, Filter, X, Star, BookOpen, DollarSign, ExternalLink, TrendingUp, Info, Languages, Building2, Lightbulb, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Plus, Minus, Scale, Loader2 } from 'lucide-react';
+import { Heart, MapPin, Calendar, Award, GraduationCap, Globe, Filter, X, Star, BookOpen, DollarSign, ExternalLink, TrendingUp, Info, Languages, Building2, Lightbulb, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Scale, Loader2 } from 'lucide-react';
 import { LanguageProvider, useLanguage, regionFeatures } from './LanguageContext';
 
 // 載入學校數據
@@ -34,7 +34,10 @@ function useSchoolsData() {
           schoolsType: typeof json.schools,
           schoolsIsArray: Array.isArray(json.schools)
         });
-        setData(json);
+        // 如果數據結構是 {schools: [...]}，提取 schools 陣列
+        const schoolsArray = json.schools || json;
+        console.log('🔍 [DEBUG] 實際使用的數據:', schoolsArray);
+        setData(schoolsArray);
         setLoading(false);
       })
       .catch(err => {
@@ -90,7 +93,7 @@ function AppContent() {
     console.log('🔍 [DEBUG] 組件已掛載');
     console.log('🔍 [DEBUG] 當前語言:', lang);
     console.log('🔍 [DEBUG] 數據狀態:', { loading, error, dataLength: data?.length });
-  }, [lang, loading, error, data?.length]);
+  }, [lang]);
 
   // 錯誤處理和調試信息
   if (error) {
@@ -249,7 +252,7 @@ function AppContent() {
               }`}
             >
               <Heart className={`w-4 h-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-              {showFavoritesOnly ? t('showAll') : t('showFavorites')}
+              {showFavoritesOnly ? t('favorites') : t('favorites')}
             </button>
           </div>
         </header>
@@ -278,22 +281,6 @@ function AppContent() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('region')}
-                  </label>
-                  <select
-                    value={filters.region}
-                    onChange={(e) => setFilters(prev => ({ ...prev, region: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">{t('all')}</option>
-                    {uniqueRegions.map(region => (
-                      <option key={region} value={region}>{region}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     {t('country')}
                   </label>
                   <select
@@ -301,25 +288,9 @@ function AppContent() {
                     onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">{t('all')}</option>
+                    <option value="">{t('clearAll')}</option>
                     {uniqueCountries.map(country => (
                       <option key={country} value={country}>{country}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('exchangeType')}
-                  </label>
-                  <select
-                    value={filters.exchangeType}
-                    onChange={(e) => setFilters(prev => ({ ...prev, exchangeType: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">{t('all')}</option>
-                    {uniqueExchangeTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
                     ))}
                   </select>
                 </div>
@@ -333,7 +304,7 @@ function AppContent() {
                     onChange={(e) => setFilters(prev => ({ ...prev, semester: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">{t('all')}</option>
+                    <option value="">{t('clearAll')}</option>
                     {uniqueSemesters.map(semester => (
                       <option key={semester} value={semester}>{semester}</option>
                     ))}
@@ -342,7 +313,7 @@ function AppContent() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('gpa')} {filters.gpa && `(${filters.gpa})`}
+                    {t('cgpaRequirement')} {filters.gpa && `(${filters.gpa})`}
                   </label>
                   <input
                     type="range"
@@ -357,14 +328,14 @@ function AppContent() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('language')}
+                    {t('languageRequirement')}
                   </label>
                   <select
                     value={filters.language}
                     onChange={(e) => setFilters(prev => ({ ...prev, language: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">{t('all')}</option>
+                    <option value="">{t('clearAll')}</option>
                     {uniqueLanguages.map(language => (
                       <option key={language} value={language}>{language}</option>
                     ))}
@@ -392,7 +363,7 @@ function AppContent() {
           <div className="lg:col-span-3">
             <div className="mb-4 flex justify-between items-center">
               <p className="text-gray-600">
-                {t('results')}: {filteredSchools.length} {t('schools')}
+                {t('results')}: {filteredSchools.length} {t('totalSchools')}
               </p>
               {compareList.length > 0 && (
                 <button
@@ -416,10 +387,6 @@ function AppContent() {
                         <span className="flex items-center gap-1">
                           <MapPin className="w-4 h-4" />
                           {school.country}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Globe className="w-4 h-4" />
-                          {school.region}
                         </span>
                       </div>
                     </div>
@@ -456,19 +423,15 @@ function AppContent() {
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <span className="font-medium">{t('exchangeType')}:</span>
-                      <p className="text-gray-600">{school.exchangeType}</p>
-                    </div>
-                    <div>
                       <span className="font-medium">{t('semester')}:</span>
                       <p className="text-gray-600">{school.semester}</p>
                     </div>
                     <div>
-                      <span className="font-medium">{t('gpa')}:</span>
+                      <span className="font-medium">{t('cgpaRequirement')}:</span>
                       <p className="text-gray-600">{school.gpa}</p>
                     </div>
                     <div>
-                      <span className="font-medium">{t('language')}:</span>
+                      <span className="font-medium">{t('languageRequirement')}:</span>
                       <p className="text-gray-600">{school.language?.join(', ') || 'N/A'}</p>
                     </div>
                   </div>
@@ -477,20 +440,12 @@ function AppContent() {
                     <div className="mt-4 pt-4 border-t border-gray-200">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="font-medium">{t('requirements')}:</span>
-                          <p className="text-gray-600">{school.requirements || 'N/A'}</p>
+                          <span className="font-medium">{t('notes')}:</span>
+                          <p className="text-gray-600">{school.notes || 'N/A'}</p>
                         </div>
                         <div>
-                          <span className="font-medium">{t('costs')}:</span>
-                          <p className="text-gray-600">{school.costs || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium">{t('housing')}:</span>
-                          <p className="text-gray-600">{school.housing || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium">{t('courses')}:</span>
-                          <p className="text-gray-600">{school.courses || 'N/A'}</p>
+                          <span className="font-medium">{t('quota')}:</span>
+                          <p className="text-gray-600">{school.quota || 'N/A'}</p>
                         </div>
                       </div>
                     </div>
