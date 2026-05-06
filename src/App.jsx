@@ -72,6 +72,15 @@ function AppContent() {
   });
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [expandedSchool, setExpandedSchool] = useState(null);
+  const [filters, setFilters] = useState({
+    region: '',
+    country: '',
+    exchangeType: '',
+    semester: '',
+    gpa: '',
+    language: '',
+    search: ''
+  });
 
   // 顯示網站版本號到控制台
   useEffect(() => {
@@ -123,15 +132,6 @@ function AppContent() {
   }
 
   // 原有的應用程式邏輯繼續...
-  const [filters, setFilters] = useState({
-    region: '',
-    country: '',
-    exchangeType: '',
-    semester: '',
-    gpa: '',
-    language: '',
-    search: ''
-  });
 
   const filteredSchools = useMemo(() => {
     if (!data) return [];
